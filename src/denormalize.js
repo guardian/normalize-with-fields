@@ -1,5 +1,8 @@
 const { get, set, removeKey } = require('./utils/ObjectUtils');
 
+/**
+ * Turns a model with a field spliced into the heirarchy back into a field
+ */
 const flattenLevelToField = (model, state, field, childKey) => ({
   ...model,
   [childKey]: model[field.childrenKey].reduce(
@@ -30,6 +33,9 @@ const getEntityFromIdOrRef = (schema, state, ref) => {
     : state[schema.type][id];
 };
 
+/**
+ * Recurses down the tree and appens the children to the normalized entity
+ */
 const buildEntityChildren = (entity, schema, state, recurse) =>
   Object.keys(schema.children).reduce((candidateModel, childKey) => {
     const childSchema = schema.children[childKey];
@@ -47,6 +53,9 @@ const buildEntityChildren = (entity, schema, state, recurse) =>
     return set(model, childKey, children);
   }, entity);
 
+  /**
+   * Takes all the field keys off the model
+   */
 const removeFieldData = (model, schema) =>
   Object.keys(schema.children).reduce((model1, childKey) => {
     const childSchema = schema.children[childKey];
@@ -56,6 +65,9 @@ const removeFieldData = (model, schema) =>
       : model1;
   }, model);
 
+/**
+ * The core denormalize function
+ */
 const denormalize = rootSchema => (rootState, rootId) => {
   const recurse = (schema, state, ref) => {
     const entity = getEntityFromIdOrRef(schema, state, ref);

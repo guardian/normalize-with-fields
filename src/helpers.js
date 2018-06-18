@@ -1,7 +1,11 @@
-const createType = type => (
-  children = {},
+/**
+ * Creates a schema node
+ */
+
+const createType = (
+  type,
   { field = null, idKey = 'id', preProcess = node => ({ ...node }) } = {}
-) => ({
+) => (children = {}) => ({
   type,
   children,
   field,
@@ -9,12 +13,13 @@ const createType = type => (
   preProcess
 });
 
-const createField = type => ({
-  key = type,
-  childrenKey = `${type}s`,
-  valueKey = 'id',
-  uuid = null
-} = {}) => ({
+/**
+ * Creates a field spec
+ */
+const createField = (
+  type,
+  { key = type, childrenKey = `${type}s`, valueKey = 'id', uuid = null } = {}
+) => ({
   type,
   key,
   childrenKey,

@@ -1,57 +1,46 @@
-const { createType, createField, createSchema } = require('../');
-
-const frontSchema = createType('fronts');
-const collectionSchema = createType('collections');
-const articleFragmentSchema = createType('articleFragments');
-const treatSchema = createType('treats');
-const supportingSchema = createType('articleFragments');
-const groupSchema = createField('group');
+const { createType, createField, build } = require('../');
 
 let i = 0;
 let afId = 0;
 
-const articleFragment = articleFragmentSchema(
-  {
-    'meta.supporting': supportingSchema(
-      {},
-      {
-        idKey: 'uuid',
-        preProcess: af => ({
-          ...af,
-          uuid: afId++
-        })
-      }
-    )
-  },
-  {
-    preProcess: af => ({
-      ...af,
-      uuid: afId++
-    }),
-    idKey: 'uuid',
-    field: groupSchema({
-      key: 'meta.group',
-      valueKey: 'name',
-      uuid: () => `${i++}`
-    })
-  }
-);
+const front = createType('fronts');
+const collection = createType('collections');
 
-const { normalize, denormalize } = createSchema(
-  frontSchema({
-    collections: collectionSchema({
-      live: articleFragment,
-      previously: articleFragment,
-      treats: treatSchema(
-        {},
-        {
-          field: groupSchema({
-            key: 'meta.group',
-            valueKey: 'name',
-            uuid: () => `${i++}`
-          })
-        }
-      )
+const group = createField('group', {
+  key: 'meta.group',
+  valueKey: 'name',
+  uuid: () => `${i++}`
+});
+
+const articleFragment = createType('articleFragments', {
+  preProcess: af => ({
+    ...af,
+    uuid: afId++
+  }),
+  idKey: 'uuid',
+  field: group
+});
+const treat = createType('treats', {
+  field: group
+});
+const supporting = createType('articleFragments', {
+  idKey: 'uuid',
+  preProcess: af => ({
+    ...af,
+    uuid: afId++
+  })
+});
+
+const { normalize, denormalize } = build(
+  front({
+    collections: collection({
+      live: articleFragment({
+        'meta.supporting': supporting()
+      }),
+      previously: articleFragment({
+        'meta.supporting': supporting()
+      }),
+      treats: treat()
     })
   })
 );
@@ -219,10 +208,7 @@ describe('normalizer', () => {
               "'Much nicer than expected': football fans size up Moscow",
             isBoosted: true,
             showKickerCustom: true,
-            supporting: [
-              3,
-              4
-            ],
+            supporting: [3, 4],
             customKicker: 'World Cup'
           }
         }

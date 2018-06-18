@@ -12,18 +12,15 @@ const addFieldSchemaLevel = (
   { childrenKey, valueKey, uuid },
   childKey
 ) =>
-  createType(childrenKey)(
-    {
-      [childKey]: createType(schema.type)(
-        schema.children,
-        ['field', 'children', 'type'].reduce(
-          (acc, key) => removeKey(acc, key),
-          schema
-        )
+  createType(childrenKey, { idKey: uuid ? 'uuid' : valueKey })({
+    [childKey]: createType(
+      schema.type,
+      ['field', 'children', 'type'].reduce(
+        (acc, key) => removeKey(acc, key),
+        schema
       )
-    },
-    { idKey: uuid ? 'uuid' : valueKey }
-  );
+    )(schema.children)
+  });
 
 /** Creates a node in the heriarchy that represents a field, moving the value
  * from `field.key` to `field.valueKey` and creating a UUID if specified
@@ -56,6 +53,9 @@ const addFieldModelLevel = (children, field, childKey) =>
     )
   );
 
+/**
+ * Does all the splicing in of a new 'field level' in the tree
+ */
 const modifyCandidatesForField = (childSchema, model, children, childKey) => ({
   childSchema: addFieldSchemaLevel(childSchema, childSchema.field, childKey),
   model: removeKey(model, childKey),
@@ -63,12 +63,18 @@ const modifyCandidatesForField = (childSchema, model, children, childKey) => ({
   childKey: childSchema.field.childrenKey
 });
 
+/**
+ * Takes a bunch of 'child specs' (keys and ids) and adds them to an entity
+ */
 const addChildIdsToEntity = (entity, childrenSpec) =>
   Object.entries(childrenSpec).reduce(
     (acc, [key, ids]) => set(acc, key, ids),
     entity
   );
 
+/**
+ * Adds an entity to a normalized state at a type / id position 
+ */
 const addEntityToState = (state, type, id, entity) => ({
   ...state,
   [type]: {
@@ -77,8 +83,11 @@ const addEntityToState = (state, type, id, entity) => ({
   }
 });
 
+/**
+ * The core normalize function
+ */
 const normalize = rootSchema => rootModel => {
-  const run = (parentSchema, model, state = {}) => {
+  const recurse = (parentSchema, model, state = {}) => {
     const { type, idKey } = parentSchema;
 
     const [childState, model1, childrenSpec] = Object.keys(
@@ -111,7 +120,7 @@ const normalize = rootSchema => rootModel => {
           .map(childSchema.preProcess)
           .reduce(
             ([state, childIds], child) => [
-              run(childSchema, child, state),
+              recurse(childSchema, child, state),
               [...childIds, child[childSchema.idKey]]
             ],
             [prevState, []]
@@ -137,7 +146,7 @@ const normalize = rootSchema => rootModel => {
     );
   };
 
-  return run(rootSchema, rootSchema.preProcess(rootModel));
+  return recurse(rootSchema, rootSchema.preProcess(rootModel));
 };
 
 module.exports = {
