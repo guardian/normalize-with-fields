@@ -8,12 +8,27 @@ const supportingSchema = createType('articleFragments');
 const groupSchema = createField('group');
 
 let i = 0;
+let afId = 0;
 
 const articleFragment = articleFragmentSchema(
   {
-    'meta.supporting': supportingSchema()
+    'meta.supporting': supportingSchema(
+      {},
+      {
+        idKey: 'uuid',
+        preProcess: af => ({
+          ...af,
+          uuid: afId++
+        })
+      }
+    )
   },
   {
+    preProcess: af => ({
+      ...af,
+      uuid: afId++
+    }),
+    idKey: 'uuid',
     field: groupSchema({
       key: 'meta.group',
       valueKey: 'name',
@@ -49,6 +64,7 @@ const model = {
       live: [
         {
           id: 'internal-code/page/4717875',
+          uuid: 5,
           frontPublicationDate: 1528872499882,
           publishedBy: 'Chris King',
           meta: {
@@ -57,6 +73,7 @@ const model = {
             supporting: [
               {
                 id: 'internal-code/page/4717478',
+                uuid: 6,
                 meta: {
                   headline: 'Streetwear was a class thing',
                   customKicker: 'A-Cold-Wall*’s Samuel Ross',
@@ -91,6 +108,7 @@ const model = {
       previously: [
         {
           id: 'internal-code/page/4717035',
+          uuid: 7,
           frontPublicationDate: 1528864307952,
           publishedBy: 'Warren Murray',
           meta: {
@@ -101,6 +119,7 @@ const model = {
             supporting: [
               {
                 id: 'internal-code/page/4714067',
+                uuid: 8,
                 meta: {
                   headline: "Juergen Teller's World Cup photographs",
                   customKicker: 'Naked, trembling and drinking',
@@ -109,6 +128,7 @@ const model = {
               },
               {
                 id: 'internal-code/page/4716873',
+                uuid: 9,
                 meta: {
                   headline: "What to watch instead if you can't stand football",
                   customKicker: 'Television',
@@ -139,7 +159,8 @@ describe('normalizer', () => {
   it('normalizes nicely', () => {
     expect(normalize(model)).toEqual({
       articleFragments: {
-        'internal-code/page/4717478': {
+        '1': {
+          uuid: 1,
           id: 'internal-code/page/4717478',
           meta: {
             headline: 'Streetwear was a class thing',
@@ -148,18 +169,20 @@ describe('normalizer', () => {
             showKickerCustom: true
           }
         },
-        'internal-code/page/4717875': {
+        '0': {
+          uuid: 0,
           id: 'internal-code/page/4717875',
           frontPublicationDate: 1528872499882,
           publishedBy: 'Chris King',
           meta: {
             headline: 'A guide to its new collection',
             showKickerCustom: true,
-            supporting: ['internal-code/page/4717478'],
+            supporting: [1],
             customKicker: 'Can M&amp;S be saved by a teddy bear coat?'
           }
         },
-        'internal-code/page/4714067': {
+        '3': {
+          uuid: 3,
           id: 'internal-code/page/4714067',
           meta: {
             headline: "Juergen Teller's World Cup photographs",
@@ -167,7 +190,8 @@ describe('normalizer', () => {
             showKickerCustom: true
           }
         },
-        'internal-code/page/4716873': {
+        '4': {
+          uuid: 4,
           id: 'internal-code/page/4716873',
           meta: {
             headline: "What to watch instead if you can't stand football",
@@ -185,7 +209,8 @@ describe('normalizer', () => {
             showKickerCustom: true
           }
         },
-        'internal-code/page/4717035': {
+        '2': {
+          uuid: 2,
           id: 'internal-code/page/4717035',
           frontPublicationDate: 1528864307952,
           publishedBy: 'Warren Murray',
@@ -195,19 +220,19 @@ describe('normalizer', () => {
             isBoosted: true,
             showKickerCustom: true,
             supporting: [
-              'internal-code/page/4714067',
-              'internal-code/page/4716873'
+              3,
+              4
             ],
             customKicker: 'World Cup'
           }
         }
       },
       groups: {
-        '0': { name: '1', uuid: '0', live: ['internal-code/page/4717875'] },
+        '0': { name: '1', uuid: '0', live: [0] },
         '1': {
           name: '1',
           uuid: '1',
-          previously: ['internal-code/page/4717035']
+          previously: [2]
         },
         '2': { name: '0', uuid: '2', treats: ['snap/1470297947216'] }
       },

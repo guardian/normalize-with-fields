@@ -14,12 +14,18 @@ const addFieldSchemaLevel = (
 ) =>
   createType(childrenKey)(
     {
-      [childKey]: createType(schema.type)(schema.children)
+      [childKey]: createType(schema.type)(
+        schema.children,
+        ['field', 'children', 'type'].reduce(
+          (acc, key) => removeKey(acc, key),
+          schema
+        )
+      )
     },
     { idKey: uuid ? 'uuid' : valueKey }
   );
 
-/** Creates a node in the heriarchy that represents a field, moving the value 
+/** Creates a node in the heriarchy that represents a field, moving the value
  * from `field.key` to `field.valueKey` and creating a UUID if specified
  */
 const createBaseFieldNodeFromChild = (child, field) => ({
@@ -101,13 +107,15 @@ const normalize = rootSchema => rootModel => {
               childKey: candidateChildKey
             };
 
-        const [childState, childIds] = children.reduce(
-          ([state, childIds], child) => [
-            run(childSchema, child, state),
-            [...childIds, child[childSchema.idKey]]
-          ],
-          [prevState, []]
-        );
+        const [childState, childIds] = children
+          .map(childSchema.preProcess)
+          .reduce(
+            ([state, childIds], child) => [
+              run(childSchema, child, state),
+              [...childIds, child[childSchema.idKey]]
+            ],
+            [prevState, []]
+          );
 
         return [
           childState,
@@ -129,7 +137,7 @@ const normalize = rootSchema => rootModel => {
     );
   };
 
-  return run(rootSchema, rootModel);
+  return run(rootSchema, rootSchema.preProcess(rootModel));
 };
 
 module.exports = {

@@ -1,17 +1,18 @@
 const createType = type => (
   children = {},
-  { field = null, idKey = "id" } = {}
+  { field = null, idKey = 'id', preProcess = node => ({ ...node }) } = {}
 ) => ({
   type,
   children,
   field,
-  idKey
+  idKey,
+  preProcess
 });
 
 const createField = type => ({
   key = type,
   childrenKey = `${type}s`,
-  valueKey = "id",
+  valueKey = 'id',
   uuid = null
 } = {}) => ({
   type,
