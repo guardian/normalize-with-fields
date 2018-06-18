@@ -1,0 +1,10 @@
+{
+  "name": "normal",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "flow-bin": "^0.74.0",
+    "jest": "^23.1.0"
+  }
+}
