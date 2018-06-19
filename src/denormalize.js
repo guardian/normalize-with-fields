@@ -34,31 +34,11 @@ const getEntityFromIdOrRef = (schema, state, ref) => {
 };
 
 /**
- * Recurses down the tree and appens the children to the normalized entity
+ * Takes all the field keys off the model
  */
-const buildEntityChildren = (entity, schema, state, recurse) =>
-  Object.keys(schema.children).reduce((candidateModel, childKey) => {
-    const childSchema = schema.children[childKey];
-
-    const model = childSchema.field
-      ? flattenLevelToField(candidateModel, state, childSchema.field, childKey)
-      : candidateModel;
-
-    const childIds = get(model || {}, childKey) || [];
-
-    const children = childIds.map(childId =>
-      recurse(schema.children[childKey], state, childId, recurse)
-    );
-
-    return set(model, childKey, children);
-  }, entity);
-
-  /**
-   * Takes all the field keys off the model
-   */
-const removeFieldData = (model, schema) =>
-  Object.keys(schema.children).reduce((model1, childKey) => {
-    const childSchema = schema.children[childKey];
+const removeFieldData = (model, childSchemas) =>
+  Object.keys(childSchemas).reduce((model1, childKey) => {
+    const childSchema = childSchemas[childKey];
 
     return childSchema.field
       ? removeKey(model1, childSchema.field.childrenKey)
@@ -68,14 +48,36 @@ const removeFieldData = (model, schema) =>
 /**
  * The core denormalize function
  */
-const denormalize = rootSchema => (rootState, rootId) => {
-  const recurse = (schema, state, ref) => {
-    const entity = getEntityFromIdOrRef(schema, state, ref);
-    const model = buildEntityChildren(entity, schema, state, recurse);
-    return removeFieldData(model, schema);
-  };
+const denormalize = rootChildSchemas => (rootEntity, _entities) => {
+  const recurse = (childSchemas, entity, entities) => {
+    const model = Object.keys(childSchemas).reduce((candidateModel, childKey) => {
+      const childSchema = childSchemas[childKey];
 
-  return recurse(rootSchema, rootState, rootId);
+      const model = childSchema.field
+        ? flattenLevelToField(
+            candidateModel,
+            entities,
+            childSchema.field,
+            childKey
+          )
+        : candidateModel;
+
+      const childIds = get(model || {}, childKey) || [];
+
+      const children = childIds.map(childId =>
+        recurse(
+          childSchemas[childKey].children,
+          getEntityFromIdOrRef(childSchema, entities, childId),
+          entities
+        )
+      );
+
+      return set(model, childKey, children);
+    }, entity);
+    return removeFieldData(model, childSchemas);
+  }
+
+  return recurse(rootChildSchemas, rootEntity, _entities);
 };
 
 module.exports = {

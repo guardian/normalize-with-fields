@@ -73,7 +73,7 @@ const addChildIdsToEntity = (entity, childrenSpec) =>
   );
 
 /**
- * Adds an entity to a normalized state at a type / id position 
+ * Adds an entity to a normalized state at a type / id position
  */
 const addEntityToState = (state, type, id, entity) => ({
   ...state,
@@ -84,17 +84,21 @@ const addEntityToState = (state, type, id, entity) => ({
 });
 
 /**
+ * Adds an childId of type to children specs
+ */
+const addChildIdToChildrenSpecs = (childrenSpecs, childKey, id) => ({
+  ...childrenSpecs,
+  [childKey]: [...(childrenSpecs[childKey] || []), id]
+});
+
+/**
  * The core normalize function
  */
-const normalize = rootSchema => rootModel => {
-  const recurse = (parentSchema, model, state = {}) => {
-    const { type, idKey } = parentSchema;
-
-    const [childState, model1, childrenSpec] = Object.keys(
-      parentSchema.children
-    ).reduce(
-      ([prevState, candidateModel, prevChildren], candidateChildKey) => {
-        const candidateChildSchema = parentSchema.children[candidateChildKey];
+const normalize = rootChildSchemas => rootModel => {
+  const recurse = (childSchemas, model, state = {}) =>
+    Object.keys(childSchemas).reduce(
+      ([candidateModel, prevState, prevChildrenSpecs], candidateChildKey) => {
+        const candidateChildSchema = childSchemas[candidateChildKey];
         const candidateChildren = get(candidateModel, candidateChildKey) || [];
 
         const {
@@ -116,37 +120,44 @@ const normalize = rootSchema => rootModel => {
               childKey: candidateChildKey
             };
 
-        const [childState, childIds] = children
-          .map(childSchema.preProcess)
-          .reduce(
-            ([state, childIds], child) => [
-              recurse(childSchema, child, state),
-              [...childIds, child[childSchema.idKey]]
-            ],
-            [prevState, []]
-          );
+        const { type, idKey, preProcess } = childSchema;
 
         return [
-          childState,
           model,
-          {
-            ...prevChildren,
-            [childKey]: [...(prevChildren[childKey] || []), ...childIds]
-          }
+          ...children.map(preProcess).reduce(
+            ([state, childrenSpecs], candidateChild) => {
+              const [child, childState, childChildrenSpecs] = recurse(
+                childSchema.children || {},
+                candidateChild,
+                state
+              );
+              return [
+                addEntityToState(
+                  childState,
+                  type,
+                  child[idKey],
+                  addChildIdsToEntity(child, childChildrenSpecs)
+                ),
+                addChildIdToChildrenSpecs(
+                  childrenSpecs,
+                  childKey,
+                  child[childSchema.idKey]
+                )
+              ];
+            },
+            [prevState, prevChildrenSpecs]
+          )
         ];
       },
-      [state, model, {}]
+      [model, state, {}]
     );
 
-    return addEntityToState(
-      childState,
-      type,
-      model1[idKey],
-      addChildIdsToEntity(model1, childrenSpec)
-    );
+  const [model, state, childrenSpecs] = recurse(rootChildSchemas, rootModel);
+
+  return {
+    entities: state,
+    result: addChildIdsToEntity(model, childrenSpecs)
   };
-
-  return recurse(rootSchema, rootSchema.preProcess(rootModel));
 };
 
 module.exports = {
