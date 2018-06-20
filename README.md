@@ -53,7 +53,7 @@ const collections = {
 };
 ```
 
-This library allows you to specify a schema that will treat these fields as parents. Potentially this library could have done the preprocessing work to change the model / schema before handing off the actual normalization to a tool like normalizr but this would have required keeping two schemas or using a normalizr schema as the schema for this tool, which seemed a bit odd.
+This library allows you to specify a schema that will treat these fields as parents. Potentially this library could have done the preprocessing work to change the model / schema before handing off the actual normalization to a tool like normalizr but this would have required keeping two schemas or using a normalizr schema as the schema for this tool, which seemed a bit odd. That said, this library also allows nested key syntax such as `a.b` which is required for some use cases and does not exist in normalizr.
 
 **Warning** `fields` should only be used when the data model _should_ be representing a tree. Denormalizing will cause a different ordering of entities from the original model in some cases e.g:
 
