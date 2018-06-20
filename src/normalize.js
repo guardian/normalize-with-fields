@@ -7,12 +7,8 @@ const { createType } = require('./helpers');
  * This function is aimed to create a schema that reflects the model created by
  * addFieldModelLevel, which adds a group into the heirarchy of the actual model
  */
-const addFieldSchemaLevel = (
-  schema,
-  { childrenKey, valueKey, uuid },
-  childKey
-) =>
-  createType(childrenKey, { idKey: uuid ? 'uuid' : valueKey })({
+const addFieldSchemaLevel = (schema, { type, valueKey, uuid }, childKey) =>
+  createType(type, { idKey: uuid ? 'uuid' : valueKey })({
     [childKey]: createType(
       schema.type,
       ['field', 'children', 'type'].reduce(
@@ -37,20 +33,20 @@ const createBaseFieldNodeFromChild = (child, field) => ({
  */
 const addFieldModelLevel = (children, field, childKey) =>
   Object.values(
-    children.reduce(
-      (childrenMap, child) => ({
+    children.reduce((childrenMap, child) => {
+      const key = get(child, field.key);
+      const prev =
+        childrenMap[key] || createBaseFieldNodeFromChild(child, field);
+
+      return {
         ...childrenMap,
-        [get(child, field.key)]: set(
-          createBaseFieldNodeFromChild(child, field),
+        [key]: set(
+          prev,
           childKey, // can be `a.b`
-          [
-            ...(get(childrenMap[get(child, field.key)] || {}, childKey) || []),
-            removeKey(child, field.key)
-          ]
+          [...(get(prev, childKey) || []), removeKey(child, field.key)]
         )
-      }),
-      {}
-    )
+      };
+    }, {})
   );
 
 /**
@@ -60,7 +56,7 @@ const modifyCandidatesForField = (childSchema, model, children, childKey) => ({
   childSchema: addFieldSchemaLevel(childSchema, childSchema.field, childKey),
   model: removeKey(model, childKey),
   children: addFieldModelLevel(children, childSchema.field, childKey),
-  childKey: childSchema.field.childrenKey
+  childKey: childSchema.field.type
 });
 
 /**

@@ -5,14 +5,14 @@ const { get, set, removeKey } = require('./utils/ObjectUtils');
  */
 const flattenLevelToField = (model, state, field, childKey) => ({
   ...model,
-  [childKey]: model[field.childrenKey].reduce(
+  [childKey]: (model[field.type] || []).reduce(
     (acc, fieldId) => [
       ...acc,
-      ...(state[field.childrenKey][fieldId][childKey] || []).map(id => ({
+      ...(state[field.type][fieldId][childKey] || []).map(id => ({
         id,
         field: {
           key: field.key,
-          value: state[field.childrenKey][fieldId][field.valueKey]
+          value: state[field.type][fieldId][field.valueKey]
         }
       }))
     ],
@@ -41,7 +41,7 @@ const removeFieldData = (model, childSchemas) =>
     const childSchema = childSchemas[childKey];
 
     return childSchema.field
-      ? removeKey(model1, childSchema.field.childrenKey)
+      ? removeKey(model1, childSchema.field.type)
       : model1;
   }, model);
 
@@ -50,32 +50,35 @@ const removeFieldData = (model, childSchemas) =>
  */
 const denormalize = rootChildSchemas => (rootEntity, _entities) => {
   const recurse = (childSchemas, entity, entities) => {
-    const model = Object.keys(childSchemas).reduce((candidateModel, childKey) => {
-      const childSchema = childSchemas[childKey];
+    const model = Object.keys(childSchemas).reduce(
+      (candidateModel, childKey) => {
+        const childSchema = childSchemas[childKey];
 
-      const model = childSchema.field
-        ? flattenLevelToField(
-            candidateModel,
-            entities,
-            childSchema.field,
-            childKey
+        const model = childSchema.field
+          ? flattenLevelToField(
+              candidateModel,
+              entities,
+              childSchema.field,
+              childKey
+            )
+          : candidateModel;
+
+        const childIds = get(model || {}, childKey) || [];
+
+        const children = childIds.map(childId =>
+          recurse(
+            childSchemas[childKey].children,
+            getEntityFromIdOrRef(childSchema, entities, childId),
+            entities
           )
-        : candidateModel;
+        );
 
-      const childIds = get(model || {}, childKey) || [];
-
-      const children = childIds.map(childId =>
-        recurse(
-          childSchemas[childKey].children,
-          getEntityFromIdOrRef(childSchema, entities, childId),
-          entities
-        )
-      );
-
-      return set(model, childKey, children);
-    }, entity);
+        return set(model, childKey, children);
+      },
+      entity
+    );
     return removeFieldData(model, childSchemas);
-  }
+  };
 
   return recurse(rootChildSchemas, rootEntity, _entities);
 };

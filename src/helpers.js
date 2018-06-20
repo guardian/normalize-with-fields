@@ -16,7 +16,7 @@ const createType = (
 /**
  * Creates a field spec
  */
-const createField = (
+const createFieldType = (
   type,
   { key = type, childrenKey = `${type}s`, valueKey = 'id', uuid = null } = {}
 ) => ({
@@ -29,5 +29,5 @@ const createField = (
 
 module.exports = {
   createType,
-  createField
+  createFieldType
 };

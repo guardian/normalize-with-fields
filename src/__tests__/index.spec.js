@@ -1,11 +1,11 @@
-const { createType, createField, build } = require('../');
+const { createType, createFieldType, build } = require('../');
 
 let i = 0;
 let afId = 0;
 
 const collection = createType('collections');
 
-const group = createField('group', {
+const group = createFieldType('groups', {
   key: 'meta.group',
   valueKey: 'name',
   uuid: () => `${i++}`
@@ -252,5 +252,136 @@ describe('normalizer', () => {
     const { result, entities } = normalize(model);
     const denormalized = denormalize(result, entities);
     expect(denormalized).toEqual(model);
+  });
+
+  it('handles multiple fields', () => {
+    let bi = 0;
+    let di = 0;
+
+    const a = createType('as', {
+      field: createFieldType('bs', { key: 'b', valueKey: 'bType', uuid: () => bi++ })
+    });
+    const c = createType('cs', {
+      field: createFieldType('ds', { key: 'd', valueKey: 'dType', uuid: () => di++ })
+    });
+
+    const { normalize, denormalize } = build({
+      as: a({
+        cs: c()
+      })
+    });
+
+    const model = {
+      keep: 'me',
+      as: [
+        {
+          id: 1,
+          keep: 'me',
+          b: 'b1',
+          cs: [{ id: 1, d: 'd1' }, { id: 2, d: 'd2' }, { id: 3, d: 'd1' }]
+        },
+        {
+          id: 2,
+          b: 'b1',
+          cs: []
+        },
+        {
+          id: 3,
+          b: 'b2',
+          cs: [{ id: 4, d: 'd2' }]
+        }
+      ]
+    };
+
+    const normalized = normalize(model);
+
+    expect(normalized).toEqual({
+      result: {
+        keep: 'me',
+        bs: [0, 1]
+      },
+      entities: {
+        as: {
+          1: {
+            keep: 'me',
+            id: 1,
+            ds: [0, 1]
+          },
+          2: {
+            id: 2
+          },
+          3: {
+            id: 3,
+            ds: [2]
+          }
+        },
+        bs: {
+          0: {
+            bType: 'b1',
+            uuid: 0,
+            as: [1, 2]
+          },
+          1: {
+            bType: 'b2',
+            uuid: 1,
+            as: [3]
+          }
+        },
+        cs: {
+          1: {
+            id: 1,
+          },
+          2: {
+            id: 2,
+          },
+          3: {
+            id: 3,
+          },
+          4: {
+            id: 4,
+          }
+        },
+        ds: {
+          0: {
+            dType: 'd1',
+            uuid: 0,
+            cs: [1, 3]
+          },
+          1: {
+            dType: 'd2',
+            uuid: 1,
+            cs: [2]
+          },
+          2: {
+            dType: 'd2',
+            uuid: 2,
+            cs: [4]
+          }
+        }
+      }
+    });
+
+    expect(denormalize(normalized.result, normalized.entities)).toEqual({
+      keep: 'me',
+      as: [
+        {
+          id: 1,
+          keep: 'me',
+          b: 'b1',
+          // NOTE: these are reordered when denormalized due to tree ordering
+          cs: [{ id: 1, d: 'd1' }, { id: 3, d: 'd1' }, { id: 2, d: 'd2' }]
+        },
+        {
+          id: 2,
+          b: 'b1',
+          cs: []
+        },
+        {
+          id: 3,
+          b: 'b2',
+          cs: [{ id: 4, d: 'd2' }]
+        }
+      ]
+    });
   });
 });
