@@ -1,16 +1,20 @@
+// @flow
+
 const NONE_PROPERTY = Symbol();
 
 const NONE = {
+  // $FlowFixMe computed properties
   [NONE_PROPERTY]: true
 };
 
-const get = (obj, key) => {
+const get = (obj: Object, key: string) => {
   const val = key.split('.').reduce((acc, key) => acc[key] || NONE, obj);
 
-  return val[NONE_PROPERTY] ? null : val;
+  // $FlowFixMe computed properties
+  return val[NONE_PROPERTY] ? null : (val: any);
 };
 
-const set = (obj, key, val) => {
+const set = (obj: Object, key: string, val: any) => {
   const keys = key.split('.');
 
   const run = (o, ks, v) => {
@@ -25,7 +29,7 @@ const set = (obj, key, val) => {
   return run(obj, keys, val);
 };
 
-const removeKey = (obj, key) => {
+const removeKey = (obj: Object, key: string) => {
   const keys = key.split('.');
 
   const run = (o, ks) => {
@@ -46,8 +50,4 @@ const removeKey = (obj, key) => {
   return run(obj, keys);
 };
 
-module.exports = {
-  get,
-  set,
-  removeKey
-};
+export { get, set, removeKey };

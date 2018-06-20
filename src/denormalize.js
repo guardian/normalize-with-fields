@@ -1,4 +1,7 @@
-const { get, set, removeKey } = require('./utils/ObjectUtils');
+// @flow
+
+import { get, set, removeKey } from './utils/ObjectUtils';
+import type { ChildrenMap } from './helpers';
 
 /**
  * Turns a model with a field spliced into the heirarchy back into a field
@@ -6,9 +9,9 @@ const { get, set, removeKey } = require('./utils/ObjectUtils');
 const flattenLevelToField = (model, state, field, childKey) => ({
   ...model,
   [childKey]: (model[field.type] || []).reduce(
-    (acc, fieldId) => [
+    (acc, fieldId: string) => [
       ...acc,
-      ...(state[field.type][fieldId][childKey] || []).map(id => ({
+      ...(state[field.type][fieldId][childKey] || []).map((id: string) => ({
         id,
         field: {
           key: field.key,
@@ -20,8 +23,11 @@ const flattenLevelToField = (model, state, field, childKey) => ({
   )
 });
 
-const getEntityFromIdOrRef = (schema, state, ref) => {
-  const { id, field } = typeof ref === 'object' ? ref : { id: ref };
+type Ref = string | { id: string, field: { key: string, value: string } };
+
+const getEntityFromIdOrRef = (schema, state, ref: Ref) => {
+  const { id, field } =
+    typeof ref === 'object' ? ref : { id: ref, field: null };
   return field
     ? set(
         {
@@ -45,10 +51,19 @@ const removeFieldData = (model, childSchemas) =>
       : model1;
   }, model);
 
+type EnitityMap = {
+  [string]: {
+    [string]: Object
+  }
+};
+
 /**
  * The core denormalize function
  */
-const denormalize = rootChildSchemas => (rootEntity, _entities) => {
+const denormalize = (rootChildSchemas: ChildrenMap) => (
+  rootEntity: Object,
+  _entities: EnitityMap
+) => {
   const recurse = (childSchemas, entity, entities) => {
     const model = Object.keys(childSchemas).reduce(
       (candidateModel, childKey) => {
@@ -83,6 +98,4 @@ const denormalize = rootChildSchemas => (rootEntity, _entities) => {
   return recurse(rootChildSchemas, rootEntity, _entities);
 };
 
-module.exports = {
-  denormalize
-};
+export { denormalize };

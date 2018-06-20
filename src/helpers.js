@@ -1,11 +1,35 @@
+// @flow
+
 /**
  * Creates a schema node
  */
 
+type ChildrenMap = {
+  [string]: SchemaNode
+};
+
+type SchemaNode = {
+  type: string,
+  children: ChildrenMap,
+  field: ?Field,
+  idKey: string,
+  preProcess: (node: Object) => Object
+};
+
+type SchemaNodeOptions = {
+  field?: ?Field,
+  idKey?: string,
+  preProcess?: (node: Object) => Object
+};
+
 const createType = (
-  type,
-  { field = null, idKey = 'id', preProcess = node => ({ ...node }) } = {}
-) => (children = {}) => ({
+  type: string,
+  {
+    field,
+    idKey = 'id',
+    preProcess = (node: Object) => ({ ...node })
+  }: SchemaNodeOptions = {}
+) => (children: ChildrenMap = {}): SchemaNode => ({
   type,
   children,
   field,
@@ -13,13 +37,33 @@ const createType = (
   preProcess
 });
 
+type Field = {
+  type: string,
+  key: string,
+  childrenKey: string,
+  valueKey: string,
+  uuid: ?() => string
+};
+
+type FieldOptions = {
+  key?: string,
+  childrenKey?: string,
+  valueKey?: string,
+  uuid?: () => string
+};
+
 /**
  * Creates a field spec
  */
 const createFieldType = (
-  type,
-  { key = type, childrenKey = `${type}s`, valueKey = 'id', uuid = null } = {}
-) => ({
+  type: string,
+  {
+    key = type,
+    childrenKey = `${type}s`,
+    valueKey = 'id',
+    uuid
+  }: FieldOptions = {}
+): Field => ({
   type,
   key,
   childrenKey,
@@ -27,7 +71,6 @@ const createFieldType = (
   uuid
 });
 
-module.exports = {
-  createType,
-  createFieldType
-};
+export type { ChildrenMap, SchemaNode, Field };
+
+export { createType, createFieldType };
