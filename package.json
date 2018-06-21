@@ -1,7 +1,7 @@
 {
-  "name": "normal-with-fields",
+  "name": "normalise-with-fields",
   "version": "1.0.0",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
     "build": "rollup -c",
