@@ -35,7 +35,7 @@ const createBaseFieldNodeFromChild = (child: Object, field) => ({
  * a field on that type with children pushed down to children of this (this
  * makes no sense)
  */
-const addFieldModelLevel = (children, childSchema, childKey) => {
+const addFieldModelLevel = (children, childSchema) => {
   const { field, type } = childSchema;
   const map = children.reduce(
     (childrenMap: { [string]: Object }, child: Object) => {
@@ -48,7 +48,7 @@ const addFieldModelLevel = (children, childSchema, childKey) => {
         [key]: set(
           prev,
           field.childrenKey || type, // can be `a.b`
-          [...(get(prev, childKey) || []), removeKey(child, field.key)]
+          [...(get(prev, field.childrenKey || type) || []), removeKey(child, field.key)]
         )
       };
     },
@@ -72,7 +72,7 @@ const modifyCandidatesForField = (
 ) => ({
   childSchema: addFieldSchemaLevel(childSchema, childKey),
   model,
-  children: addFieldModelLevel(children, childSchema, childKey)
+  children: addFieldModelLevel(children, childSchema)
 });
 
 type ChildrenSpecs = {
