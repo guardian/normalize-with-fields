@@ -10,15 +10,14 @@ import type { ChildrenMap, SchemaNode, Field } from './helpers';
  * This function is aimed to create a schema that reflects the model created by
  * addFieldModelLevel, which adds a group into the heirarchy of the actual model
  */
-const addFieldSchemaLevel = (schema, childKey) => {
-  const {
-    field: { type, valueKey, childrenKey, uuid },
-    children,
-    type: t,
-    ...opts
-  } = schema;
-  return createType(type, { idKey: uuid ? 'uuid' : valueKey })({
-    [childrenKey || t]: createType(t, { ...opts, field: null })(children)
+const addFieldSchemaLevel = schema => {
+  const { field, children, type, ...opts } = schema;
+  return createType(field.type, {
+    idKey: field.uuid ? 'uuid' : field.valueKey
+  })({
+    [field.childrenKey || type]: createType(type, { ...opts, field: null })(
+      children
+    )
   });
 };
 
@@ -43,15 +42,16 @@ const addFieldModelLevel = (children, childSchema) => {
       const prev =
         childrenMap[key] || createBaseFieldNodeFromChild(child, field);
 
+      // TODO: if we build the schema when we call `build` we won't have to make
+      // these checks every time we do this
+      const childrenKey = field.childrenKey || type;
+
       return {
         ...childrenMap,
         [key]: set(
           prev,
-          field.childrenKey || type, // can be `a.b`
-          [
-            ...(get(prev, field.childrenKey || type) || []),
-            removeKey(child, field.key)
-          ]
+          childrenKey, // can be `a.b`
+          [...(get(prev, childrenKey) || []), removeKey(child, field.key)]
         )
       };
     },
@@ -69,13 +69,12 @@ type SchemaNodeWithField = $Diff<SchemaNode, { field: ?Field }> & {
  */
 const modifyCandidatesForField = (
   childSchema: SchemaNodeWithField,
-  model,
   children,
   childKey
 ) => ({
-  childSchema: addFieldSchemaLevel(childSchema, childKey),
-  model,
-  children: addFieldModelLevel(children, childSchema)
+  childSchema: addFieldSchemaLevel(childSchema),
+  children: addFieldModelLevel(children, childSchema),
+  childKey: childSchema.field.groupKey || childKey
 });
 
 type ChildrenSpecs = {
@@ -120,27 +119,32 @@ const addChildIdToChildrenSpecs = (
   [childKey]: [...(childrenSpecs[childKey] || []), id]
 });
 
+const removeChildChildKeys = (model: Object, childrenMap) =>
+  Object.keys(childrenMap).reduce(
+    (acc, key): Object => removeKey(acc, key),
+    model
+  );
+
 /**
  * The core normalize function
  */
 const normalize = (rootChildSchemas: ChildrenMap) => (rootModel: Object) => {
   const recurse = (childSchemas, model, state = {}) =>
     Object.keys(childSchemas).reduce(
-      ([candidateModel, prevState, prevChildrenSpecs], childKey) => {
-        const candidateChildSchema = childSchemas[childKey];
-        const candidateChildren = get(candidateModel, childKey) || [];
+      ([model, prevState, prevChildrenSpecs], candidateChildKey) => {
+        const candidateChildSchema = childSchemas[candidateChildKey];
+        const candidateChildren = get(model, candidateChildKey) || [];
 
-        const { childSchema, model, children } = candidateChildSchema.field
+        const { childSchema, childKey, children } = candidateChildSchema.field
           ? modifyCandidatesForField(
               ((candidateChildSchema: any): SchemaNodeWithField),
-              candidateModel,
               candidateChildren,
-              childKey
+              candidateChildKey
             )
           : {
               childSchema: candidateChildSchema,
-              model: candidateModel,
-              children: candidateChildren
+              children: candidateChildren,
+              childKey: candidateChildKey
             };
 
         const { type, idKey, preProcess } = childSchema;
@@ -159,7 +163,10 @@ const normalize = (rootChildSchemas: ChildrenMap) => (rootModel: Object) => {
                   childState,
                   type,
                   child[idKey],
-                  addChildIdsToEntity(child, childChildrenSpecs)
+                  addChildIdsToEntity(
+                    removeChildChildKeys(child, childSchema.children),
+                    childChildrenSpecs
+                  )
                 ),
                 addChildIdToChildrenSpecs(
                   childrenSpecs,
@@ -179,7 +186,10 @@ const normalize = (rootChildSchemas: ChildrenMap) => (rootModel: Object) => {
 
   return {
     entities: state,
-    result: addChildIdsToEntity(model, childrenSpecs)
+    result: addChildIdsToEntity(
+      removeChildChildKeys(model, rootChildSchemas),
+      childrenSpecs
+    )
   };
 };
 

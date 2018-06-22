@@ -40,7 +40,10 @@ const createType = (
 type Field = {
   type: string,
   key: string,
+  // what we call children under a field level
   childrenKey?: string,
+  // what we group these fields by, otherwise we'll keep the child key the same
+  groupKey:? string,
   valueKey: string,
   uuid: ?() => string
 };
@@ -48,6 +51,7 @@ type Field = {
 type FieldOptions = {
   key?: string,
   childrenKey?: string,
+  groupKey?: string,
   valueKey?: string,
   uuid?: () => string
 };
@@ -60,6 +64,7 @@ const createFieldType = (
   {
     key = type,
     childrenKey,
+    groupKey,
     valueKey = 'id',
     uuid
   }: FieldOptions = {}
@@ -67,6 +72,7 @@ const createFieldType = (
   type,
   key,
   childrenKey,
+  groupKey,
   valueKey,
   uuid
 });

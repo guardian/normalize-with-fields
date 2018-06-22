@@ -10,9 +10,9 @@ type SchemaNodeWithField = $Diff<SchemaNode, { field: ?Field }> & {
 /**
  * Turns a model with a field spliced into the heirarchy back into a field
  */
-const flattenLevelToField = (model, state, { field, type }) => ({
+const flattenLevelToField = (model, childKey, state, { field, type }) => ({
   ...model,
-  [field.childrenKey || type]: (model[field.type] || []).reduce(
+  [childKey]: (model[field.groupKey || childKey] || []).reduce(
     (acc, fieldId: string) => [
       ...acc,
       ...(state[field.type][fieldId][field.childrenKey || type] || []).map(
@@ -35,13 +35,7 @@ const getEntityFromIdOrRef = (schema, state, ref: Ref) => {
   const { id, field } =
     typeof ref === 'object' ? ref : { id: ref, field: null };
   return field
-    ? set(
-        {
-          ...state[schema.type][id]
-        },
-        field.key,
-        field.value
-      )
+    ? set(state[schema.type][id], field.key, field.value)
     : state[schema.type][id];
 };
 
@@ -49,12 +43,19 @@ const getEntityFromIdOrRef = (schema, state, ref: Ref) => {
  * Takes all the field keys off the model
  */
 const removeFieldData = (model, childSchemas) =>
-  Object.keys(childSchemas).reduce((model1, childKey) => {
-    const childSchema = childSchemas[childKey];
+  Object.keys(childSchemas).reduce((model1, childKey, _, arr) => {
+    const { type, field } = childSchemas[childKey];
 
-    return childSchema.field
-      ? removeKey(model1, childSchema.field.childrenKey || childSchema.type)
-      : model1;
+    if (!field) {
+      return model1;
+    }
+
+    const fieldChildrenKey = field.childrenKey || type;
+    const fieldParentKey = field.groupKey || childKey;
+
+    return ([fieldChildrenKey, fieldParentKey]: string[])
+      .filter(key => arr.indexOf(key) === -1)
+      .reduce((acc, key): Object => removeKey(acc, key), model1);
   }, model);
 
 type EnitityMap = {
@@ -78,6 +79,7 @@ const denormalize = (rootChildSchemas: ChildrenMap) => (
         const model = childSchema.field
           ? flattenLevelToField(
               candidateModel,
+              childKey,
               entities,
               ((childSchema: any): SchemaNodeWithField)
             )
