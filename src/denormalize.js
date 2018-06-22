@@ -1,23 +1,29 @@
 // @flow
 
 import { get, set, removeKey } from './utils/ObjectUtils';
-import type { ChildrenMap } from './helpers';
+import type { ChildrenMap, SchemaNode, Field } from './helpers';
+
+type SchemaNodeWithField = $Diff<SchemaNode, { field: ?Field }> & {
+  field: Field
+};
 
 /**
  * Turns a model with a field spliced into the heirarchy back into a field
  */
-const flattenLevelToField = (model, state, field, childKey) => ({
+const flattenLevelToField = (model, state, { field, type }) => ({
   ...model,
-  [childKey]: (model[field.type] || []).reduce(
+  [field.childrenKey || type]: (model[field.type] || []).reduce(
     (acc, fieldId: string) => [
       ...acc,
-      ...(state[field.type][fieldId][childKey] || []).map((id: string) => ({
-        id,
-        field: {
-          key: field.key,
-          value: state[field.type][fieldId][field.valueKey]
-        }
-      }))
+      ...(state[field.type][fieldId][field.childrenKey || type] || []).map(
+        (id: string) => ({
+          id,
+          field: {
+            key: field.key,
+            value: state[field.type][fieldId][field.valueKey]
+          }
+        })
+      )
     ],
     []
   )
@@ -47,7 +53,7 @@ const removeFieldData = (model, childSchemas) =>
     const childSchema = childSchemas[childKey];
 
     return childSchema.field
-      ? removeKey(model1, childSchema.field.type)
+      ? removeKey(model1, childSchema.field.childrenKey || childSchema.type)
       : model1;
   }, model);
 
@@ -73,8 +79,7 @@ const denormalize = (rootChildSchemas: ChildrenMap) => (
           ? flattenLevelToField(
               candidateModel,
               entities,
-              childSchema.field,
-              childKey
+              ((childSchema: any): SchemaNodeWithField)
             )
           : candidateModel;
 

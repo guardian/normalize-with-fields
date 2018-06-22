@@ -59,7 +59,7 @@ const createFieldType = (
   type: string,
   {
     key = type,
-    childrenKey = `${type}s`,
+    childrenKey,
     valueKey = 'id',
     uuid
   }: FieldOptions = {}

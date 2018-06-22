@@ -60,13 +60,13 @@ This library allows you to specify a schema that will treat these fields as pare
 ```js
 // if `d` is set as a fieldType on the below model
 {
-  cs: [{ id: 1, d: 'd1' }, { id: 2, d: 'd2' }, { id: 3, d: 'd1' }]
+  cs: [{ id: 1, d: 'd1' }, { id: 2, d: 'd2' }, { id: 3, d: 'd1' }];
 }
 
 // then denormalizing will result in:
 
 {
-  cs: [{ id: 1, d: 'd1' }, { id: 3, d: 'd1' }, { id: 2, d: 'd2' }]
+  cs: [{ id: 1, d: 'd1' }, { id: 3, d: 'd1' }, { id: 2, d: 'd2' }];
 }
 
 // if the model is genuinely only used as tree then this should have no semantic difference as building that tree will require this sorting anyway
@@ -96,7 +96,8 @@ This creates a field spec for transforming a field on a node into a parent of th
 
 - `type` is the normalized type.
 - `key` is the key on the node to look for the field. The `key` can appear as `a.b.c` in order to drill down into nested objects.
-- `childrenKey` is the name on the parent to add the ids too. `valueKey` is the key on the normalized model to add the `type` too.
+- `childrenKey` is the name on the new entity to add the child ids to. It defaults to the entity type of the child.
+- `valueKey` is the key on the normalized model to add the `type` to.
 - `uuid`, if specified, will be called to add a `uuid` key to the entity in order to disambiguate it from others with the same name in sibling nodes.
 
 ## Example
