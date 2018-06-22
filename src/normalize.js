@@ -48,7 +48,10 @@ const addFieldModelLevel = (children, childSchema) => {
         [key]: set(
           prev,
           field.childrenKey || type, // can be `a.b`
-          [...(get(prev, field.childrenKey || type) || []), removeKey(child, field.key)]
+          [
+            ...(get(prev, field.childrenKey || type) || []),
+            removeKey(child, field.key)
+          ]
         )
       };
     },
