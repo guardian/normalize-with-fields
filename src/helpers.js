@@ -40,7 +40,7 @@ const createType = (
 type Field = {
   type: string,
   key: string,
-  childrenKey: string,
+  childrenKey?: string,
   valueKey: string,
   uuid: ?() => string
 };
