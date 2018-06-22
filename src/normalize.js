@@ -120,7 +120,7 @@ const addChildIdToChildrenSpecs = (
 });
 
 const removeChildChildKeys = (model: Object, childrenMap) =>
-  Object.keys(childrenMap).reduce(
+  (Object.keys(childrenMap): string[]).reduce(
     (acc, key): Object => removeKey(acc, key),
     model
   );
