@@ -90,7 +90,9 @@ const denormalize = (rootChildSchemas: ChildrenMap) => (
         const children = childIds.map(childId =>
           recurse(
             childSchemas[childKey].children,
-            getEntityFromIdOrRef(childSchema, entities, childId),
+            childSchema.postProcess(
+              getEntityFromIdOrRef(childSchema, entities, childId)
+            ),
             entities
           )
         );

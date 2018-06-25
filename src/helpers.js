@@ -13,13 +13,15 @@ type SchemaNode = {
   children: ChildrenMap,
   field: ?Field,
   idKey: string,
-  preProcess: (node: Object) => Object
+  preProcess: (node: Object) => Object,
+  postProcess: (node: Object) => Object
 };
 
 type SchemaNodeOptions = {
   field?: ?Field,
   idKey?: string,
-  preProcess?: (node: Object) => Object
+  preProcess?: (node: Object) => Object,
+  postProcess?: (node: Object) => Object
 };
 
 const createType = (
@@ -27,14 +29,16 @@ const createType = (
   {
     field,
     idKey = 'id',
-    preProcess = (node: Object) => ({ ...node })
+    preProcess = (node: Object) => ({ ...node }),
+    postProcess = (node: Object) => ({ ...node })
   }: SchemaNodeOptions = {}
 ) => (children: ChildrenMap = {}): SchemaNode => ({
   type,
   children,
   field,
   idKey,
-  preProcess
+  preProcess,
+  postProcess
 });
 
 type Field = {
@@ -43,7 +47,7 @@ type Field = {
   // what we call children under a field level
   childrenKey?: string,
   // what we group these fields by, otherwise we'll keep the child key the same
-  groupKey:? string,
+  groupKey: ?string,
   valueKey: string,
   uuid: ?() => string
 };
