@@ -312,7 +312,8 @@ describe('normalizer', () => {
             ds: [0, 1]
           },
           2: {
-            id: 2
+            id: 2,
+            ds: []
           },
           3: {
             id: 3,

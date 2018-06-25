@@ -175,7 +175,13 @@ const normalize = (rootChildSchemas: ChildrenMap) => (rootModel: Object) => {
                 )
               ];
             },
-            [prevState, prevChildrenSpecs]
+            [
+              prevState,
+              {
+                ...prevChildrenSpecs,
+                [childKey]: []
+              }
+            ]
           )
         ];
       },
