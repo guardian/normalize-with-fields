@@ -14,7 +14,7 @@ const get = (obj: Object, key: string) => {
   return val[NONE_PROPERTY] ? null : (val: any);
 };
 
-const set = (obj: Object, key: string, val: any) => {
+const set = (obj: Object, key: string, val: any): Object => {
   const keys = key.split('.');
 
   const run = (o, ks, v) => {
@@ -29,7 +29,7 @@ const set = (obj: Object, key: string, val: any) => {
   return run(obj, keys, val);
 };
 
-const removeKey = (obj: Object, key: string) => {
+const removeKey = (obj: Object, key: string): Object => {
   const keys = key.split('.');
 
   const run = (o, ks) => {
