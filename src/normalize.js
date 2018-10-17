@@ -29,6 +29,9 @@ const createBaseFieldNodeFromChild = (child: Object, field) => ({
   ...(field.uuid ? { uuid: field.uuid() } : {})
 });
 
+const createDefaultField = field =>
+  createBaseFieldNodeFromChild({ [field.key]: field.defaultValue }, field);
+
 /**
  * This turns an array of children of a type to an array of parents representing
  * a field on that type with children pushed down to children of this (this
@@ -57,7 +60,13 @@ const addFieldModelLevel = (children, childSchema) => {
     },
     {}
   );
-  return Object.keys(map).map(key => (map[key]: Object));
+  const newChildren = Object.keys(map).map(key => (map[key]: Object));
+
+  return newChildren.length
+    ? newChildren
+    : field.defaultValue
+      ? [createDefaultField(field)]
+      : [];
 };
 
 type SchemaNodeWithField = $Diff<SchemaNode, { field: ?Field }> & {

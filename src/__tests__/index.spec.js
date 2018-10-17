@@ -42,7 +42,7 @@ const { normalize, denormalize } = build({
   })
 });
 
-const model = {
+const guModel = {
   id: '1',
   collections: [
     {
@@ -141,9 +141,31 @@ const model = {
   ]
 };
 
+const absModel = {
+  keep: 'me',
+  as: [
+    {
+      id: 1,
+      keep: 'me',
+      b: 'b1',
+      cs: [{ id: 1, d: 'd1' }, { id: 2, d: 'd2' }, { id: 3, d: 'd1' }]
+    },
+    {
+      id: 2,
+      b: 'b1',
+      cs: []
+    },
+    {
+      id: 3,
+      b: 'b2',
+      cs: [{ id: 4, d: 'd2' }]
+    }
+  ]
+};
+
 describe('normalizer', () => {
   it('normalizes nicely', () => {
-    expect(normalize(model)).toEqual({
+    expect(normalize(guModel)).toEqual({
       entities: {
         articleFragments: {
           '1': {
@@ -253,9 +275,9 @@ describe('normalizer', () => {
   });
 
   it('normalizes and denormalizes nicely', () => {
-    const { result, entities } = normalize(model);
+    const { result, entities } = normalize(guModel);
     const denormalized = denormalize(result, entities);
-    expect(denormalized).toEqual(model);
+    expect(denormalized).toEqual(guModel);
   });
 
   it('handles multiple fields', () => {
@@ -263,10 +285,20 @@ describe('normalizer', () => {
     let di = 0;
 
     const a = createType('as', {
-      field: createFieldType('bs', { key: 'b', groupKey: 'bs', valueKey: 'bType', uuid: () => bi++ })
+      field: createFieldType('bs', {
+        key: 'b',
+        groupKey: 'bs',
+        valueKey: 'bType',
+        uuid: () => bi++
+      })
     });
     const c = createType('cs', {
-      field: createFieldType('ds', { key: 'd', groupKey: 'ds', valueKey: 'dType', uuid: () => di++ })
+      field: createFieldType('ds', {
+        key: 'd',
+        groupKey: 'ds',
+        valueKey: 'dType',
+        uuid: () => di++
+      })
     });
 
     const { normalize, denormalize } = build({
@@ -275,29 +307,7 @@ describe('normalizer', () => {
       })
     });
 
-    const model = {
-      keep: 'me',
-      as: [
-        {
-          id: 1,
-          keep: 'me',
-          b: 'b1',
-          cs: [{ id: 1, d: 'd1' }, { id: 2, d: 'd2' }, { id: 3, d: 'd1' }]
-        },
-        {
-          id: 2,
-          b: 'b1',
-          cs: []
-        },
-        {
-          id: 3,
-          b: 'b2',
-          cs: [{ id: 4, d: 'd2' }]
-        }
-      ]
-    };
-
-    const normalized = normalize(model);
+    const normalized = normalize(absModel);
 
     expect(normalized).toEqual({
       result: {
@@ -334,16 +344,16 @@ describe('normalizer', () => {
         },
         cs: {
           1: {
-            id: 1,
+            id: 1
           },
           2: {
-            id: 2,
+            id: 2
           },
           3: {
-            id: 3,
+            id: 3
           },
           4: {
-            id: 4,
+            id: 4
           }
         },
         ds: {
@@ -360,6 +370,133 @@ describe('normalizer', () => {
           2: {
             dType: 'd2',
             uuid: 2,
+            cs: [4]
+          }
+        }
+      }
+    });
+
+    expect(denormalize(normalized.result, normalized.entities)).toEqual({
+      keep: 'me',
+      as: [
+        {
+          id: 1,
+          keep: 'me',
+          b: 'b1',
+          // NOTE: these are reordered when denormalized due to tree ordering
+          cs: [{ id: 1, d: 'd1' }, { id: 3, d: 'd1' }, { id: 2, d: 'd2' }]
+        },
+        {
+          id: 2,
+          b: 'b1',
+          cs: []
+        },
+        {
+          id: 3,
+          b: 'b2',
+          cs: [{ id: 4, d: 'd2' }]
+        }
+      ]
+    });
+  });
+
+  it('handles default fields', () => {
+    let bi = 0;
+    let di = 0;
+
+    const a = createType('as', {
+      field: createFieldType('bs', {
+        key: 'b',
+        groupKey: 'bs',
+        valueKey: 'bType',
+        uuid: () => bi++,
+        defaultValue: 'defB'
+      })
+    });
+    const c = createType('cs', {
+      field: createFieldType('ds', {
+        key: 'd',
+        groupKey: 'ds',
+        valueKey: 'dType',
+        uuid: () => di++,
+        defaultValue: 'defD'
+      })
+    });
+
+    const { normalize, denormalize } = build({
+      as: a({
+        cs: c()
+      })
+    });
+
+    const normalized = normalize(absModel);
+
+    expect(normalized).toEqual({
+      result: {
+        keep: 'me',
+        bs: [0, 1]
+      },
+      entities: {
+        as: {
+          1: {
+            keep: 'me',
+            id: 1,
+            ds: [0, 1]
+          },
+          2: {
+            id: 2,
+            ds: [2]
+          },
+          3: {
+            id: 3,
+            ds: [3]
+          }
+        },
+        bs: {
+          0: {
+            bType: 'b1',
+            uuid: 0,
+            as: [1, 2]
+          },
+          1: {
+            bType: 'b2',
+            uuid: 1,
+            as: [3]
+          }
+        },
+        cs: {
+          1: {
+            id: 1
+          },
+          2: {
+            id: 2
+          },
+          3: {
+            id: 3
+          },
+          4: {
+            id: 4
+          }
+        },
+        ds: {
+          0: {
+            dType: 'd1',
+            uuid: 0,
+            cs: [1, 3]
+          },
+          1: {
+            dType: 'd2',
+            uuid: 1,
+            cs: [2]
+          },
+          2: {
+            dType: 'defD',
+            uuid: 2,
+            cs: []
+          },
+          3: {
+            dType: 'd2',
+            uuid: 3,
             cs: [4]
           }
         }

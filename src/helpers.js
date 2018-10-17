@@ -49,7 +49,8 @@ type Field = {
   // what we group these fields by, otherwise we'll keep the child key the same
   groupKey: ?string,
   valueKey: string,
-  uuid: ?() => string
+  uuid: ?() => string,
+  defaultValue?: string
 };
 
 type FieldOptions = {
@@ -57,7 +58,8 @@ type FieldOptions = {
   childrenKey?: string,
   groupKey?: string,
   valueKey?: string,
-  uuid?: () => string
+  uuid?: () => string,
+  defaultValue?: string
 };
 
 /**
@@ -70,7 +72,8 @@ const createFieldType = (
     childrenKey,
     groupKey,
     valueKey = 'id',
-    uuid
+    uuid,
+    defaultValue
   }: FieldOptions = {}
 ): Field => ({
   type,
@@ -78,7 +81,8 @@ const createFieldType = (
   childrenKey,
   groupKey,
   valueKey,
-  uuid
+  uuid,
+  defaultValue
 });
 
 export type { ChildrenMap, SchemaNode, Field };
