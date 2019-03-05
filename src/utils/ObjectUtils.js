@@ -8,7 +8,9 @@ const NONE = {
 };
 
 const get = (obj: Object, key: string) => {
-  const val = key.split('.').reduce((acc, key) => acc[key] || NONE, obj);
+  const val = key
+    .split('.')
+    .reduce((acc: Object, key) => acc[key] || NONE, obj);
 
   // $FlowFixMe computed properties
   return val[NONE_PROPERTY] ? null : (val: any);

@@ -14,7 +14,7 @@
     "@babel/preset-flow": "^7.0.0-beta.49",
     "babel-core": "^7.0.0-0",
     "babel-jest": "^23.0.1",
-    "flow-bin": "^0.74.0",
+    "flow-bin": "^0.94.0",
     "jest": "^23.1.0",
     "mkdirp": "^0.5.1",
     "rollup": "^0.60.7",
