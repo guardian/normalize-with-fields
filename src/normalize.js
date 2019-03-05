@@ -138,7 +138,7 @@ const removeChildChildKeys = (model: Object, childrenMap) =>
  * The core normalize function
  */
 const normalize = (rootChildSchemas: ChildrenMap) => (rootModel: Object) => {
-  const recurse = (childSchemas, model, state = {}) =>
+  const recurse = (childSchemas, model, state = {}, parents = []) =>
     Object.keys(childSchemas).reduce(
       ([model, prevState, prevChildrenSpecs], candidateChildKey) => {
         const candidateChildSchema = childSchemas[candidateChildKey];
@@ -160,12 +160,13 @@ const normalize = (rootChildSchemas: ChildrenMap) => (rootModel: Object) => {
 
         return [
           model,
-          ...children.map(preProcess).reduce(
+          ...children.map(child => preProcess(child, parents)).reduce(
             ([state, childrenSpecs], candidateChild) => {
               const [child, childState, childChildrenSpecs] = recurse(
                 childSchema.children || {},
                 candidateChild,
-                state
+                state,
+                [...parents, model]
               );
               return [
                 addEntityToState(

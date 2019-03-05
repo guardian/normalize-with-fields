@@ -13,14 +13,14 @@ type SchemaNode = {
   children: ChildrenMap,
   field: ?Field,
   idKey: string,
-  preProcess: (node: Object) => Object,
+  preProcess: (node: Object, parents: Object[]) => Object,
   postProcess: (node: Object) => Object
 };
 
 type SchemaNodeOptions = {
   field?: ?Field,
   idKey?: string,
-  preProcess?: (node: Object) => Object,
+  preProcess?: (node: Object, parents: Object[]) => Object,
   postProcess?: (node: Object) => Object
 };
 

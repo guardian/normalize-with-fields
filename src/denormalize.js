@@ -10,7 +10,12 @@ type SchemaNodeWithField = $Diff<SchemaNode, { field: ?Field }> & {
 /**
  * Turns a model with a field spliced into the heirarchy back into a field
  */
-const flattenLevelToField = (model, childKey, state, { field, type }) => ({
+const flattenLevelToField = (
+  model: Object,
+  childKey: string,
+  state: Object,
+  { field, type }
+) => ({
   ...model,
   [childKey]: (model[field.groupKey || childKey] || []).reduce(
     (acc, fieldId: string) => [
